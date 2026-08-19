@@ -1,0 +1,757 @@
+{
+  "id": "63qwjhYqjXUEOaNP",
+  "name": "Matkovska Quiz Bot Dashboard",
+  "active": false,
+  "isArchived": false,
+  "versionId": "a8abdc16-6c0e-45a3-82a1-6b684cc98ed7",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 19,
+  "createdAt": "2026-08-19T08:49:08.786Z",
+  "updatedAt": "2026-08-19T08:50:58.270Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "XkT4TnNR4NHZRd6f",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Teacher dashboard for Matkovska Quiz Bot - clone of the original Quiz Bot Dashboard with new schema/token/paths",
+  "connections": {
+    "Page Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check Token: Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token: Page": {
+      "main": [
+        [
+          {
+            "node": "Token Valid: Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Valid: Page": {
+      "main": [
+        [
+          {
+            "node": "Respond: Dashboard Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: Unauthorized Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check Token: API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token: API": {
+      "main": [
+        [
+          {
+            "node": "Token Valid: API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Valid: API": {
+      "main": [
+        [
+          {
+            "node": "Scope Allows View",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: Unauthorized API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scope Allows View": {
+      "main": [
+        [
+          {
+            "node": "Route By View",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: Forbidden API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By View": {
+      "main": [
+        [
+          {
+            "node": "Fetch Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Topics",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Trends",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Student Detail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Whoami",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: Bad View",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Summary": {
+      "main": [
+        [
+          {
+            "node": "Respond: JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Topics": {
+      "main": [
+        [
+          {
+            "node": "Respond: JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Trends": {
+      "main": [
+        [
+          {
+            "node": "Respond: JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Student Detail": {
+      "main": [
+        [
+          {
+            "node": "Respond: JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Whoami": {
+      "main": [
+        [
+          {
+            "node": "Respond: JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "cfbb509b-3eb0-496f-b37b-f68fe82f7c65",
+      "name": "Page Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        32
+      ],
+      "parameters": {
+        "path": "matkovska-quiz-dashboard",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "752d926c-ecb5-4177-8dea-d68ae72709ce"
+    },
+    {
+      "id": "d43a10c1-ec16-43cc-80fe-4a1a07c81040",
+      "name": "Check Token: Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        32
+      ],
+      "parameters": {
+        "jsCode": "const token = ($json.query && $json.query.token) || '';\nconst ADMIN_TOKEN = '<DASHBOARD_ADMIN_TOKEN>';\n\nif (token === ADMIN_TOKEN) {\n  return [{ json: { ok: true } }];\n}\n\nconst rows = await this.helpers.httpRequest({\n  method: 'GET',\n  url: `${$env.SUPABASE_URL}/rest/v1/subscribers`,\n  qs: { dashboard_token: `eq.${token}`, select: 'chat_id' },\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Accept-Profile': 'matkovska_quiz_bot' },\n  json: true,\n});\n\nreturn [{ json: { ok: Boolean(rows && rows[0]) } }];"
+      }
+    },
+    {
+      "id": "3f650bb8-f0c3-4e23-b7c9-4286cb6b46ee",
+      "name": "Token Valid: Page",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        32
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $('Check Token: Page').item.json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c9787a92-c8f5-4e35-99a3-34bbed08bfb7",
+      "name": "Respond: Dashboard Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        -64
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>Quiz Bot Dashboard</title>\n<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4\"></script>\n<style>\n  body { font-family: system-ui, sans-serif; margin: 2rem; background: #f7f7f8; color: #1a1a1a; }\n  h1 { margin-bottom: 1rem; }\n  .stat-cards { display: flex; gap: 12px; margin-bottom: 1.5rem; flex-wrap: wrap; }\n  .stat-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1rem 1.5rem; min-width: 140px; }\n  .stat-value { font-size: 1.8rem; font-weight: 700; color: #2a5db0; }\n  .stat-label { color: #666; font-size: 0.85rem; margin-top: 2px; }\n  details { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1rem 1.25rem; margin-bottom: 1rem; }\n  summary { font-weight: 600; cursor: pointer; font-size: 1.1rem; }\n  table { border-collapse: collapse; width: 100%; margin-top: 1rem; }\n  th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e2e2; text-align: left; }\n  th { cursor: pointer; user-select: none; background: #efefef; }\n  tbody tr:hover { background: #f0f4ff; cursor: pointer; }\n  .empty { color: #888; font-style: italic; }\n  .chart-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 1rem; }\n  canvas { max-width: 100%; height: auto !important; }\n</style>\n</head>\n<body>\n<h1 id=\"page-title\">Quiz Bot Dashboard</h1>\n<div id=\"stat-cards\" class=\"stat-cards\"></div>\n\n<div id=\"cohort-sections\" style=\"display:none;\">\n  <details id=\"trend-section\" open>\n    <summary>Accuracy Trend (last 30 days)</summary>\n    <canvas id=\"trend-chart\" width=\"760\" height=\"180\"></canvas>\n  </details>\n\n  <details id=\"topics-section\" open>\n    <summary>Topic Breakdown</summary>\n    <div class=\"chart-row\">\n      <canvas id=\"topics-bar-chart\" width=\"380\" height=\"220\"></canvas>\n      <canvas id=\"content-donut-chart\" width=\"380\" height=\"220\"></canvas>\n    </div>\n    <table id=\"topics-table\"><thead><tr>\n      <th data-key=\"content_type\">Type</th>\n      <th data-key=\"topic_label\">Topic</th>\n      <th data-key=\"error_rate_pct\">Error rate %</th>\n      <th data-key=\"total_attempts\">Attempts</th>\n      <th data-key=\"distinct_students\">Students</th>\n    </tr></thead><tbody></tbody></table>\n  </details>\n\n  <details id=\"roster-section\" open>\n    <summary>Students</summary>\n    <table id=\"roster-table\"><thead><tr>\n      <th data-key=\"first_name\">Name</th>\n      <th data-key=\"accuracy_pct\">Accuracy %</th>\n      <th data-key=\"current_streak\">Streak</th>\n      <th data-key=\"total_answered\">Answered</th>\n      <th data-key=\"last_answered_at\">Last active</th>\n    </tr></thead><tbody></tbody></table>\n  </details>\n</div>\n\n<details id=\"personal-trend-section\" style=\"display:none;\" open>\n  <summary>Your Accuracy Trend (last 30 days)</summary>\n  <canvas id=\"personal-trend-chart\" width=\"760\" height=\"180\"></canvas>\n</details>\n\n<details id=\"history-section\" style=\"display:none;\" open>\n  <summary id=\"history-summary\">Answer History</summary>\n  <table id=\"detail-table\"><thead><tr>\n    <th>When</th><th>Type</th><th>Topic</th><th>Question</th><th>Result</th>\n  </tr></thead><tbody></tbody></table>\n</details>\n\n<script>\nvar qparams = new URLSearchParams(window.location.search);\nvar token = qparams.get('token') || '';\nvar API = '/webhook/matkovska-quiz-dashboard-api';\n\nfunction showAccessDenied() {\n  document.body.innerHTML = '<h1>Access denied</h1><p>Missing or invalid token.</p>';\n}\n\nasync function fetchView(view, extra) {\n  var qs = new URLSearchParams(Object.assign({ view: view, token: token }, extra || {}));\n  var res = await fetch(API + '?' + qs.toString());\n  if (res.status === 401) { showAccessDenied(); throw new Error('unauthorized'); }\n  if (res.status === 403) { return { __forbidden: true }; }\n  return res.json();\n}\n\nfunction fillTable(tbody, rows, cols, emptyMsg) {\n  tbody.innerHTML = '';\n  if (!rows || rows.length === 0) {\n    var emptyTr = document.createElement('tr');\n    var emptyTd = document.createElement('td');\n    emptyTd.colSpan = cols.length;\n    emptyTd.className = 'empty';\n    emptyTd.textContent = emptyMsg;\n    emptyTr.appendChild(emptyTd);\n    tbody.appendChild(emptyTr);\n    return;\n  }\n  rows.forEach(function (row) {\n    var tr = document.createElement('tr');\n    cols.forEach(function (c) {\n      var td = document.createElement('td');\n      td.textContent = row[c] == null ? '' : row[c];\n      tr.appendChild(td);\n    });\n    tbody.appendChild(tr);\n  });\n}\n\nfunction sortRows(rows, key, dir) {\n  var copy = rows.slice();\n  copy.sort(function (a, b) {\n    var av = a[key], bv = b[key];\n    if (av == null) return 1;\n    if (bv == null) return -1;\n    if (av > bv) return dir;\n    if (av < bv) return -dir;\n    return 0;\n  });\n  return copy;\n}\n\nfunction renderStatCards(cards) {\n  var container = document.getElementById('stat-cards');\n  container.innerHTML = '';\n  cards.forEach(function (c) {\n    var div = document.createElement('div');\n    div.className = 'stat-card';\n    var val = document.createElement('div');\n    val.className = 'stat-value';\n    val.textContent = c.value;\n    var label = document.createElement('div');\n    label.className = 'stat-label';\n    label.textContent = c.label;\n    div.appendChild(val);\n    div.appendChild(label);\n    container.appendChild(div);\n  });\n}\n\nfunction avgAccuracyLabel(rows) {\n  var vals = rows.map(function (r) { return r.accuracy_pct; }).filter(function (v) { return v != null; });\n  if (vals.length === 0) return '–';\n  var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;\n  return (Math.round(avg * 10) / 10) + '%';\n}\n\nfunction renderTrendChart(rows, canvasId) {\n  var ctx = document.getElementById(canvasId).getContext('2d');\n  new Chart(ctx, {\n    type: 'line',\n    data: {\n      labels: rows.map(function (r) { return r.day; }),\n      datasets: [{\n        label: 'Accuracy %',\n        data: rows.map(function (r) { return r.accuracy_pct; }),\n        borderColor: '#2a5db0',\n        tension: 0.2,\n      }],\n    },\n    options: { responsive: false, scales: { y: { beginAtZero: true, max: 100 } } },\n  });\n}\n\nvar rosterRows = [];\nvar topicRows = [];\n\nfunction renderRoster() {\n  var tbody = document.querySelector('#roster-table tbody');\n  fillTable(tbody, rosterRows,\n    ['first_name', 'accuracy_pct', 'current_streak', 'total_answered', 'last_answered_at'],\n    'No subscribers yet.');\n  Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (tr, i) {\n    if (rosterRows[i]) tr.addEventListener('click', function () { openDetail(rosterRows[i]); });\n  });\n}\n\nfunction renderTopicsTable() {\n  var tbody = document.querySelector('#topics-table tbody');\n  fillTable(tbody, topicRows,\n    ['content_type', 'topic_label', 'error_rate_pct', 'total_attempts', 'distinct_students'],\n    'No answers recorded yet.');\n}\n\nfunction renderTopicsBarChart() {\n  var top10 = topicRows.slice(0, 10);\n  var ctx = document.getElementById('topics-bar-chart').getContext('2d');\n  new Chart(ctx, {\n    type: 'bar',\n    data: {\n      labels: top10.map(function (r) { return r.topic_label; }),\n      datasets: [{ label: 'Error rate %', data: top10.map(function (r) { return r.error_rate_pct; }), backgroundColor: '#c0392b' }],\n    },\n    options: { indexAxis: 'y', responsive: false, scales: { x: { beginAtZero: true, max: 100 } } },\n  });\n}\n\nfunction renderContentDonutChart() {\n  var vocabTotal = topicRows.filter(function (r) { return r.content_type === 'vocab'; }).reduce(function (s, r) { return s + r.total_attempts; }, 0);\n  var grammarTotal = topicRows.filter(function (r) { return r.content_type === 'grammar'; }).reduce(function (s, r) { return s + r.total_attempts; }, 0);\n  var ctx = document.getElementById('content-donut-chart').getContext('2d');\n  new Chart(ctx, {\n    type: 'doughnut',\n    data: {\n      labels: ['Vocab', 'Grammar'],\n      datasets: [{ data: [vocabTotal, grammarTotal], backgroundColor: ['#2a5db0', '#e08e2b'] }],\n    },\n    options: { responsive: false },\n  });\n}\n\nArray.prototype.forEach.call(document.querySelectorAll('#roster-table th, #topics-table th'), function (th) {\n  var dir = 1;\n  th.addEventListener('click', function () {\n    dir = dir * -1;\n    var key = th.getAttribute('data-key');\n    if (th.closest('table').id === 'roster-table') {\n      rosterRows = sortRows(rosterRows, key, dir);\n      renderRoster();\n    } else {\n      topicRows = sortRows(topicRows, key, dir);\n      renderTopicsTable();\n    }\n  });\n});\n\nasync function openDetail(student) {\n  document.getElementById('history-section').style.display = 'block';\n  document.getElementById('history-summary').textContent = (student.first_name || student.chat_id) + \"'s Answer History\";\n  var rows = await fetchView('student', { chat_id: student.chat_id });\n  var tbody = document.querySelector('#detail-table tbody');\n  fillTable(tbody, rows,\n    ['answered_at', 'content_type', 'topic_label', 'question_text', 'correct'],\n    'No answers recorded for this student yet.');\n  document.getElementById('history-section').scrollIntoView({ behavior: 'smooth' });\n}\n\nasync function renderAdmin() {\n  document.getElementById('cohort-sections').style.display = 'block';\n  rosterRows = await fetchView('summary');\n  renderRoster();\n  var trends = await fetchView('trends');\n  renderStatCards([\n    { label: 'Students', value: rosterRows.length },\n    { label: 'Avg Accuracy', value: avgAccuracyLabel(rosterRows) },\n    { label: 'Answered (30d)', value: trends.reduce(function (s, r) { return s + r.total_answers; }, 0) },\n  ]);\n  renderTrendChart(trends, 'trend-chart');\n  topicRows = await fetchView('topics');\n  renderTopicsTable();\n  renderTopicsBarChart();\n  renderContentDonutChart();\n}\n\nasync function renderPersonal() {\n  var summaryRows = await fetchView('summary');\n  var me = summaryRows[0];\n  document.getElementById('page-title').textContent = (me.first_name || 'Your') + \"'s Stats\";\n  renderStatCards([\n    { label: 'Accuracy', value: me.accuracy_pct != null ? me.accuracy_pct + '%' : '–' },\n    { label: 'Streak', value: '🔥 ' + me.current_streak },\n    { label: 'Answered', value: me.total_answered },\n  ]);\n  document.getElementById('personal-trend-section').style.display = 'block';\n  var trends = await fetchView('trends');\n  renderTrendChart(trends, 'personal-trend-chart');\n  document.getElementById('history-section').style.display = 'block';\n  document.getElementById('history-summary').textContent = 'Answer History';\n  var rows = await fetchView('student');\n  var tbody = document.querySelector('#detail-table tbody');\n  fillTable(tbody, rows,\n    ['answered_at', 'content_type', 'topic_label', 'question_text', 'correct'],\n    'No answers recorded yet.');\n}\n\n(async function init() {\n  try {\n    var who = await fetchView('whoami');\n    if (who.scope === 'admin') {\n      await renderAdmin();\n    } else {\n      await renderPersonal();\n    }\n  } catch (e) {\n    if (e.message !== 'unauthorized') console.error(e);\n  }\n})();\n</script>\n</body>\n</html>",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "a03f082c-5d9b-487a-90ae-628fbb47ee6b",
+      "name": "Respond: Unauthorized Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        64,
+        128
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Unauthorized",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "6fd7d601-ff27-46bc-87b0-b1b118f1b6f9",
+      "name": "API Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        864
+      ],
+      "parameters": {
+        "path": "matkovska-quiz-dashboard-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "9de7b076-dc2e-43ed-9f2d-ace694525f7e"
+    },
+    {
+      "id": "e9c48abe-f4bb-44d3-9e6b-7cdda98d4797",
+      "name": "Check Token: API",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        864
+      ],
+      "parameters": {
+        "jsCode": "const token = ($json.query && $json.query.token) || '';\nconst ADMIN_TOKEN = '<DASHBOARD_ADMIN_TOKEN>';\n\nif (token === ADMIN_TOKEN) {\n  return [{ json: { ok: true, scope: 'admin', chat_id: null } }];\n}\n\nconst rows = await this.helpers.httpRequest({\n  method: 'GET',\n  url: `${$env.SUPABASE_URL}/rest/v1/subscribers`,\n  qs: { dashboard_token: `eq.${token}`, select: 'chat_id' },\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Accept-Profile': 'matkovska_quiz_bot' },\n  json: true,\n});\n\nif (rows && rows[0]) {\n  return [{ json: { ok: true, scope: 'personal', chat_id: rows[0].chat_id } }];\n}\n\nreturn [{ json: { ok: false, scope: null, chat_id: null } }];"
+      }
+    },
+    {
+      "id": "b91b4df3-b641-4fe7-8e60-e30bde465be2",
+      "name": "Token Valid: API",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        864
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $('Check Token: API').item.json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fc41e943-c3f8-434f-a727-17c3f9dcb57e",
+      "name": "Respond: Unauthorized API",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        1008
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Unauthorized",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "071a0cd8-e24c-4944-b453-004a762b7467",
+      "name": "Route By View",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        128,
+        688
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+                    "rightValue": "summary"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+                    "rightValue": "topics"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+                    "rightValue": "trends"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+                    "rightValue": "student"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+                    "rightValue": "whoami"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      }
+    },
+    {
+      "id": "7acc416e-907c-4c4d-b624-e38d3ba8c612",
+      "name": "Fetch Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        352
+      ],
+      "parameters": {
+        "jsCode": "const tokenInfo = $('Check Token: API').item.json;\nconst qs = { order: 'accuracy_pct.desc.nullslast,first_name.asc' };\nif (tokenInfo.scope === 'personal') {\n  qs.chat_id = `eq.${tokenInfo.chat_id}`;\n}\nconst rows = await this.helpers.httpRequest({\n  method: 'GET',\n  url: `${$env.SUPABASE_URL}/rest/v1/dashboard_student_summary`,\n  qs,\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Accept-Profile': 'matkovska_quiz_bot' },\n  json: true,\n});\nreturn [{ json: { data: rows } }];"
+      }
+    },
+    {
+      "id": "90e2269d-c951-4c13-9b1f-803976a504ff",
+      "name": "Fetch Topics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        544
+      ],
+      "parameters": {
+        "jsCode": "const rows = await this.helpers.httpRequest({\n  method: 'GET',\n  url: `${$env.SUPABASE_URL}/rest/v1/dashboard_topic_breakdown`,\n  qs: { order: 'error_rate_pct.desc.nullslast' },\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Accept-Profile': 'matkovska_quiz_bot' },\n  json: true,\n});\nreturn [{ json: { data: rows } }];"
+      }
+    },
+    {
+      "id": "c8f5c50d-d349-4599-88d6-f622067ec865",
+      "name": "Fetch Trends",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        736
+      ],
+      "parameters": {
+        "jsCode": "const tokenInfo = $('Check Token: API').item.json;\nconst rows = await this.helpers.httpRequest({\n  method: 'POST',\n  url: `${$env.SUPABASE_URL}/rest/v1/rpc/dashboard_trends`,\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Content-Profile': 'matkovska_quiz_bot' },\n  body: { p_days: 30, p_chat_id: tokenInfo.scope === 'personal' ? tokenInfo.chat_id : null },\n  json: true,\n});\nreturn [{ json: { data: rows } }];"
+      }
+    },
+    {
+      "id": "8f867f50-fbd7-4d12-8cd1-519a65db52f0",
+      "name": "Fetch Student Detail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        928
+      ],
+      "parameters": {
+        "jsCode": "const tokenInfo = $('Check Token: API').item.json;\nconst chatId = tokenInfo.scope === 'personal'\n  ? tokenInfo.chat_id\n  : $('API Webhook').item.json.query.chat_id;\nconst rows = await this.helpers.httpRequest({\n  method: 'POST',\n  url: `${$env.SUPABASE_URL}/rest/v1/rpc/dashboard_student_detail`,\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Content-Profile': 'matkovska_quiz_bot' },\n  body: { p_chat_id: Number(chatId) },\n  json: true,\n});\nreturn [{ json: { data: rows } }];"
+      }
+    },
+    {
+      "id": "b375318d-9157-41e5-beae-a290ce5a2a49",
+      "name": "Respond: JSON",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        704
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json.data) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "1d07995d-f17c-4291-8e66-dd6b04bb5f15",
+      "name": "Respond: Bad View",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        1120
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Unknown view",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "fb0d9952-db2c-4fca-a433-b74eda408050",
+      "name": "Scope Allows View",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        780
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "leftValue": "={{ $('Check Token: API').item.json.scope }}",
+              "rightValue": "admin",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+              "rightValue": "student",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+              "rightValue": "summary",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+              "rightValue": "trends",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $('API Webhook').item.json.query.view }}",
+              "rightValue": "whoami",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "9c3a143a-735b-4733-8241-6cf3144be868",
+      "name": "Respond: Forbidden API",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        900
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "f86a3984-909a-4e41-a744-b2f2814c0135",
+      "name": "Fetch Whoami",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1280
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { data: { scope: $('Check Token: API').item.json.scope } } }];"
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}

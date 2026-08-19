@@ -1,0 +1,388 @@
+{
+  "id": "4g8fCNBS0riJC7Z8",
+  "name": "Matkovska - Quiz Bot - Send Next Question (shared sub-workflow | postgres edition)",
+  "active": false,
+  "isArchived": false,
+  "versionId": "4cf12aeb-eaf7-49e9-aab8-199e8570fb6a",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "nodeCount": 11,
+  "createdAt": "2026-08-19T08:40:30.271Z",
+  "updatedAt": "2026-08-19T08:40:58.189Z",
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "XkT4TnNR4NHZRd6f"
+  },
+  "tags": [],
+  "parentFolderId": null,
+  "description": "Shared logic for picking and sending the next quiz question (vocab or grammar), used by all call sites in the Matkovska Quiz Bot (Postgres Edition). Cloned from the original bot's sub-workflow, repointed to matkovska_quiz_bot schema and TELEGRAM_MATKOVSKA",
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Determine Content Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Content Type": {
+      "main": [
+        [
+          {
+            "node": "Is Grammar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Grammar?": {
+      "main": [
+        [
+          {
+            "node": "Pick Grammar Question",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pick Vocab Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Grammar Question": {
+      "main": [
+        [
+          {
+            "node": "Question Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Vocab Question": {
+      "main": [
+        [
+          {
+            "node": "Question Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Found?": {
+      "main": [
+        [
+          {
+            "node": "Build Question Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Session (Exhausted)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Question Message": {
+      "main": [
+        [
+          {
+            "node": "Reply: Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Session (Exhausted)": {
+      "main": [
+        [
+          {
+            "node": "Build Exhausted Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Exhausted Text": {
+      "main": [
+        [
+          {
+            "node": "Reply: Exhausted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "7a05ff12-5abd-48c8-bd6f-82f0c02a115a",
+      "name": "When Called",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "chat_id",
+              "type": "number"
+            },
+            {
+              "name": "content_pref"
+            },
+            {
+              "name": "asked_vocab_ids",
+              "type": "array"
+            },
+            {
+              "name": "asked_grammar_ids",
+              "type": "array"
+            },
+            {
+              "name": "question_index",
+              "type": "number"
+            },
+            {
+              "name": "correct_count",
+              "type": "number"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "896a8aa0-73a7-457d-a9fc-212da305fe82",
+      "name": "Determine Content Type",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const j = $json;\nconst contentType = j.content_pref === 'both' ? (Math.random() < 0.5 ? 'vocab' : 'grammar') : j.content_pref;\nreturn [{ json: { ...j, contentType } }];"
+      }
+    },
+    {
+      "id": "cff411d1-4f46-4969-9097-6da9741035cb",
+      "name": "Is Grammar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        512,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.contentType }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "grammar"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "251bd5fa-c15b-480d-8ecc-60688c60454c",
+      "name": "Pick Grammar Question",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        752,
+        -96
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ 'SELECT question_id, sentence, options, correct_option_index FROM matkovska_quiz_bot.pick_next_grammar_question(p_chat_id := ' + Number($json.chat_id) + ', p_exclude_ids := ARRAY[' + ($json.asked_grammar_ids || []).map(Number).join(',') + ']::bigint[])' }}",
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "Pfck0EZrKZMEBgFo",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "8048d256-d1cc-4826-a869-ac5ae16e8533",
+      "name": "Question Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1008,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.question_id || $json.word_id) ? 'yes' : 'no' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "yes"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "5ab3c7f1-3893-4094-913b-28ea66a9826a",
+      "name": "Build Question Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const j = $('When Called').item.json;\nconst d = $json;\nlet opts, qText;\nif (d.question_id !== undefined) {\n  opts = d.options.map((t, i) => ({ text: t, cb: i === d.correct_option_index ? `qz_correct_grammar_${d.question_id}` : `qz_wrong_grammar_${d.question_id}` }));\n  qText = d.sentence;\n} else {\n  opts = [{ text: d.correct, cb: `qz_correct_vocab_${d.word_id}` }, ...d.distractors.map((t) => ({ text: t, cb: `qz_wrong_vocab_${d.word_id}` }))];\n  qText = `What does \"${d.word}\" mean?`;\n}\nfor (let i = opts.length - 1; i > 0; i--) {\n  const k = Math.floor(Math.random() * (i + 1));\n  [opts[i], opts[k]] = [opts[k], opts[i]];\n}\nconst buttons = opts.map((o) => [{ text: o.text, callback_data: o.cb }]);\nreturn [{ json: { chat_id: j.chat_id, text: `Question ${j.question_index} of 3\\n\\n${qText}`, buttons } }];"
+      }
+    },
+    {
+      "id": "79cecafd-e8c0-47e8-a1c8-6b6127bc163d",
+      "name": "Reply: Question",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1504,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ \"https://api.telegram.org/bot\" + $env.TELEGRAM_MATKOVSKA_BOT_TOKEN + \"/sendMessage\" }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($json.chat_id), text: $json.text, reply_markup: { inline_keyboard: $json.buttons } }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "7c70db02-2969-419d-807c-e5c31f62b17f",
+      "name": "Delete Session (Exhausted)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1264,
+        -144
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM matkovska_quiz_bot.sessions WHERE chat_id = $1",
+        "options": {
+          "queryReplacement": "={{ Number($('When Called').item.json.chat_id) }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "Pfck0EZrKZMEBgFo",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "7c54e125-c068-4047-86fc-3546835e6478",
+      "name": "Build Exhausted Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1504,
+        -144
+      ],
+      "parameters": {
+        "jsCode": "const j = $('When Called').item.json;\nconst text = j.question_index > 1\n  ? `🏁 Round ended early: ${j.correct_count}/${j.question_index - 1}`\n  : 'No questions available right now — try again later.';\nreturn [{ json: { chat_id: j.chat_id, text } }];"
+      }
+    },
+    {
+      "id": "bcdc3343-40b5-4de7-8bb7-41bfbb69bd30",
+      "name": "Reply: Exhausted",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        -144
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ \"https://api.telegram.org/bot\" + $env.TELEGRAM_MATKOVSKA_BOT_TOKEN + \"/sendMessage\" }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($json.chat_id), text: $json.text }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "204f4003-7885-4633-a1b8-2d9ad6e77474",
+      "name": "Pick Vocab Question",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        752,
+        112
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ 'SELECT word_id, word, correct, distractors FROM matkovska_quiz_bot.pick_next_question(p_chat_id := ' + Number($json.chat_id) + ', p_exclude_ids := ARRAY[' + ($json.asked_vocab_ids || []).map(Number).join(',') + ']::bigint[])' }}",
+        "options": {}
+      },
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "Pfck0EZrKZMEBgFo",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "nodeGroups": [],
+  "activeVersion": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  }
+}
