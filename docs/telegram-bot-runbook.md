@@ -108,6 +108,26 @@ this "Postgres Edition" template is ever cloned again (e.g. a third teacher's bo
   checks) never exercises this path at all, since it talks to Postgres directly — the first real
   signal was `/mystats` and the dashboard failing in production. Check this explicitly during setup
   next time rather than assuming it's covered by the DDL step.
+- **The Phase 1 `grammar_questions` seed is a point-in-time snapshot, not a live sync — it can
+  silently drift from fixes made in the source repos after the copy ran.** `matkovska_quiz_bot.
+  grammar_questions` was populated 2026-08-18 via a straight `INSERT ... SELECT ... FROM
+  quiz_bot.grammar_questions` (see `docs/quiz-bot-database.md`'s "Phase 1 content seed"). One day
+  later, a content-authoring bug was found and fixed upstream: in `englishpusher-grammar-testing`
+  (`D:\VIBE CODING\englishpusher-grammar-testing`), 36 of 74 multiple-choice grammar questions
+  across 6 topics (`verb-patterns`, `narrative-tenses`, `modifiers`,
+  `past-simple-present-perfect`, `apologise-and-give-reasons`, `starting-ending-conversations`)
+  had `sentence` and `multipleChoice.question` set to identical text — the import script
+  (`grammar_transform.mjs` in the sibling `moodle-task-builder` repo) bakes both into one stored
+  `sentence` column as `` `${q.sentence}\n\n${q.multipleChoice.question}` ``, so the bug rendered
+  as the same line shown twice in a row in Telegram. The fix landed in `quiz_bot.grammar_questions`
+  (commit `c11a2eb` in `englishpusher-grammar-testing`) but **not** in this schema's already-copied
+  rows, since there's no ongoing pipeline linking them — confirmed and fixed 2026-08-19 by patching
+  the same 36 `source_id`-matched rows via targeted PostgREST `PATCH` calls (not a full re-copy, to
+  avoid renumbering `id`s and silently breaking any `answers.question_id` references — there's no
+  FK enforcing that link, so a full delete+reinsert would fail silently rather than error). Detect
+  this class of bug with: `sentence.split('\n\n')` having exactly 2 parts that are identical after
+  trimming. **If `englishpusher-grammar-testing` or `quiz_bot.grammar_questions` changes again in
+  the future, this schema needs re-syncing again by hand — nothing does it automatically.**
 
 ## Before going live to real students
 
