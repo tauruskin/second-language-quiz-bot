@@ -1,18 +1,19 @@
 {
   "id": "O72qRKsNQWGic1xp",
   "name": "Matkovska - Telegram Quiz Bot (Postgres Edition)",
-  "active": false,
+  "active": true,
   "isArchived": false,
-  "versionId": "9d9059c3-078f-49f9-9984-6d58f4849e42",
-  "activeVersionId": null,
-  "triggerCount": 0,
-  "nodeCount": 67,
+  "versionId": "1131885c-5a2a-4f05-b5d5-9a13bd27d620",
+  "activeVersionId": "1131885c-5a2a-4f05-b5d5-9a13bd27d620",
+  "triggerCount": 3,
+  "nodeCount": 68,
   "createdAt": "2026-08-18T16:27:18.738Z",
-  "updatedAt": "2026-08-19T08:41:59.394Z",
+  "updatedAt": "2026-08-19T14:09:57.186Z",
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": true,
-    "errorWorkflow": "XkT4TnNR4NHZRd6f"
+    "errorWorkflow": "XkT4TnNR4NHZRd6f",
+    "binaryMode": "separate"
   },
   "tags": [],
   "parentFolderId": null,
@@ -168,6 +169,13 @@
         [
           {
             "node": "My Stats Link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply: About",
             "type": "main",
             "index": 0
           }
@@ -660,14 +668,6 @@
   },
   "nodes": [
     {
-      "id": "d9c6dfd3-ff6a-45e0-bdc9-b82fb22d0bad",
-      "name": "Schedule Trigger",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -80,
-        0
-      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -676,17 +676,17 @@
             }
           ]
         }
-      }
-    },
-    {
-      "id": "01ae4911-63f4-4839-85f7-e1cca3b39096",
-      "name": "Telegram Trigger",
-      "type": "n8n-nodes-base.telegramTrigger",
+      },
+      "id": "d9c6dfd3-ff6a-45e0-bdc9-b82fb22d0bad",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
         -80,
-        1376
-      ],
+        96
+      ]
+    },
+    {
       "parameters": {
         "updates": [
           "message",
@@ -694,6 +694,14 @@
         ],
         "additionalFields": {}
       },
+      "id": "01ae4911-63f4-4839-85f7-e1cca3b39096",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        1760
+      ],
       "webhookId": "06e54bf7-a099-4535-8188-3931196a2d76",
       "credentials": {
         "telegramApi": {
@@ -703,19 +711,19 @@
       }
     },
     {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM matkovska_quiz_bot.due_subscribers()",
+        "options": {}
+      },
       "id": "ce749f7b-204e-4e5b-9c0f-f07655e06566",
       "name": "Get Due Subscribers",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
         144,
-        0
+        96
       ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT * FROM matkovska_quiz_bot.due_subscribers()",
-        "options": {}
-      },
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -724,6 +732,13 @@
       }
     },
     {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE matkovska_quiz_bot.subscribers SET last_sent_at = now() WHERE chat_id = $1",
+        "options": {
+          "queryReplacement": "={{ Number($('Get Due Subscribers').item.json.chat_id) }}"
+        }
+      },
       "id": "e7123e37-d6bc-4b27-be58-e99fc77334db",
       "name": "Mark Sent",
       "type": "n8n-nodes-base.postgres",
@@ -732,13 +747,6 @@
         816,
         0
       ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "UPDATE matkovska_quiz_bot.subscribers SET last_sent_at = now() WHERE chat_id = $1",
-        "options": {
-          "queryReplacement": "={{ Number($('Get Due Subscribers').item.json.chat_id) }}"
-        }
-      },
       "onError": "continueErrorOutput",
       "credentials": {
         "postgres": {
@@ -748,53 +756,45 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const u = $json;\nconst cb = u.callback_query;\nconst msg = cb ? cb.message : u.message;\nconst from = cb ? cb.from : u.message.from;\nreturn [{ json: {\n  chat_id: String(msg.chat.id),\n  first_name: from.first_name || '',\n  text: cb ? cb.data : (u.message.text || ''),\n  callback_id: cb ? cb.id : '',\n  is_callback: Boolean(cb),\n} }];"
+      },
       "id": "3ca12c19-265e-41ba-9727-dc327f61a860",
       "name": "Normalize Update",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         144,
-        1376
-      ],
-      "parameters": {
-        "jsCode": "const u = $json;\nconst cb = u.callback_query;\nconst msg = cb ? cb.message : u.message;\nconst from = cb ? cb.from : u.message.from;\nreturn [{ json: {\n  chat_id: String(msg.chat.id),\n  first_name: from.first_name || '',\n  text: cb ? cb.data : (u.message.text || ''),\n  callback_id: cb ? cb.id : '',\n  is_callback: Boolean(cb),\n} }];"
-      }
+        1760
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const j = $json;\nif (!j.is_callback || !j.callback_id) return [];\ntry {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/answerCallbackQuery`,\n    body: { callback_query_id: j.callback_id },\n    json: true,\n  });\n} catch (e) {\n}\nreturn [];"
+      },
       "id": "0353cfbf-e64b-4a57-a091-951256fe5f6d",
       "name": "Ack Callback",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         368,
-        1568
-      ],
-      "parameters": {
-        "jsCode": "const j = $json;\nif (!j.is_callback || !j.callback_id) return [];\ntry {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/answerCallbackQuery`,\n    body: { callback_query_id: j.callback_id },\n    json: true,\n  });\n} catch (e) {\n}\nreturn [];"
-      }
+        1952
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const t = ($json.text || '').trim();\nlet action = 'help', hour = null, day = null, question_id = '', correct = null,\n    content_type = null, content_pref = null;\n\nif (/^\\/start\\b/i.test(t)) action = 'start';\nelse if (/^\\/settings\\b/i.test(t) || t === 'su_settings_open') action = 'settings_menu';\nelse if (/^\\/pause\\b/i.test(t)) action = 'pause';\nelse if (/^\\/resume\\b/i.test(t)) action = 'resume';\nelse if (/^\\/question\\b/i.test(t)) action = 'question';\nelse if (/^\\/dashboard\\b/i.test(t)) action = 'dashboard_link';\nelse if (/^\\/mystats\\b/i.test(t)) action = 'my_stats_link';\nelse if (/^\\/about\\b/i.test(t)) action = 'about';\nelse if (t === 'su_schedule_open') action = 'pick_cadence';\nelse if (t === 'su_content_open') action = 'content_menu';\nelse if (t === 'su_cadence_daily') action = 'pick_hour';\nelse if (t === 'su_cadence_weekly') action = 'pick_day';\nelse {\n  let m;\n  if ((m = t.match(/^su_day_([0-6])$/))) { action = 'pick_hour'; day = Number(m[1]); }\n  else if ((m = t.match(/^su_hour_daily_(\\d+)$/))) { action = 'save_schedule'; hour = Number(m[1]); }\n  else if ((m = t.match(/^su_hour_weekly_([0-6])_(\\d+)$/))) {\n    action = 'save_schedule'; day = Number(m[1]); hour = Number(m[2]);\n  }\n  else if ((m = t.match(/^su_content_(vocab|grammar|both)$/))) {\n    action = 'save_content'; content_pref = m[1];\n  }\n  else if ((m = t.match(/^qz_(correct|wrong)_(vocab|grammar)_(\\d+)$/))) {\n    action = 'answer'; correct = m[1] === 'correct'; content_type = m[2]; question_id = m[3];\n  }\n}\nreturn [{ json: { ...$json, action, hour, day, question_id, correct, content_type, content_pref } }];"
+      },
       "id": "9b60c4d1-4d9e-4b05-ae46-6b137fbfa23b",
       "name": "Route",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         368,
-        1376
-      ],
-      "parameters": {
-        "jsCode": "const t = ($json.text || '').trim();\nlet action = 'help', hour = null, day = null, question_id = '', correct = null,\n    content_type = null, content_pref = null;\n\nif (/^\\/start\\b/i.test(t)) action = 'start';\nelse if (/^\\/settings\\b/i.test(t) || t === 'su_settings_open') action = 'settings_menu';\nelse if (/^\\/pause\\b/i.test(t)) action = 'pause';\nelse if (/^\\/resume\\b/i.test(t)) action = 'resume';\nelse if (/^\\/question\\b/i.test(t)) action = 'question';\nelse if (/^\\/dashboard\\b/i.test(t)) action = 'dashboard_link';\nelse if (/^\\/mystats\\b/i.test(t)) action = 'my_stats_link';\nelse if (t === 'su_schedule_open') action = 'pick_cadence';\nelse if (t === 'su_content_open') action = 'content_menu';\nelse if (t === 'su_cadence_daily') action = 'pick_hour';\nelse if (t === 'su_cadence_weekly') action = 'pick_day';\nelse {\n  let m;\n  if ((m = t.match(/^su_day_([0-6])$/))) { action = 'pick_hour'; day = Number(m[1]); }\n  else if ((m = t.match(/^su_hour_daily_(\\d+)$/))) { action = 'save_schedule'; hour = Number(m[1]); }\n  else if ((m = t.match(/^su_hour_weekly_([0-6])_(\\d+)$/))) {\n    action = 'save_schedule'; day = Number(m[1]); hour = Number(m[2]);\n  }\n  else if ((m = t.match(/^su_content_(vocab|grammar|both)$/))) {\n    action = 'save_content'; content_pref = m[1];\n  }\n  else if ((m = t.match(/^qz_(correct|wrong)_(vocab|grammar)_(\\d+)$/))) {\n    action = 'answer'; correct = m[1] === 'correct'; content_type = m[2]; question_id = m[3];\n  }\n}\nreturn [{ json: { ...$json, action, hour, day, question_id, correct, content_type, content_pref } }];"
-      }
+        1760
+      ]
     },
     {
-      "id": "fda1affc-4971-40ac-a329-152573074790",
-      "name": "Route Action",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
-      "position": [
-        592,
-        1200
-      ],
       "parameters": {
         "rules": {
           "values": [
@@ -1087,23 +1087,42 @@
                 ]
               },
               "outputKey": "my_stats_link"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "about"
+                  }
+                ]
+              },
+              "outputKey": "about"
             }
           ]
         },
         "options": {
           "fallbackOutput": "extra"
         }
-      }
+      },
+      "id": "fda1affc-4971-40ac-a329-152573074790",
+      "name": "Route Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        592,
+        1552
+      ]
     },
     {
-      "id": "cee7998a-c286-4b25-950b-7b9e12f4ec28",
-      "name": "Upsert Start",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        1264,
-        224
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.subscribers (chat_id, first_name, active) VALUES ($1, $2, true) ON CONFLICT (chat_id) DO UPDATE SET first_name = EXCLUDED.first_name, active = EXCLUDED.active",
@@ -1111,6 +1130,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}, {{ $('Route').item.json.first_name }}"
         }
       },
+      "id": "cee7998a-c286-4b25-950b-7b9e12f4ec28",
+      "name": "Upsert Start",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1264,
+        416
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1119,14 +1146,6 @@
       }
     },
     {
-      "id": "527a6563-1f1b-4767-8037-29e2c2cfaf87",
-      "name": "Reply: Start",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1488,
-        224
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1134,17 +1153,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Build Start Reply').item.json.chat_id), text: $('Build Start Reply').item.json.reply_text, reply_markup: { inline_keyboard: [[{ text: \"⚙️ Change frequency\", callback_data: \"su_settings_open\" }]] } }) }}",
         "options": {}
-      }
-    },
-    {
-      "id": "46c6557c-cfd0-46b1-a1b7-7c476a1605a7",
-      "name": "Reply: Settings Menu",
+      },
+      "id": "527a6563-1f1b-4767-8037-29e2c2cfaf87",
+      "name": "Reply: Start",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        816,
+        1488,
         416
-      ],
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1152,17 +1171,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Route').item.json.chat_id), text: \"What would you like to change?\", reply_markup: { inline_keyboard: [[ { \"text\": \"📅 Schedule\", \"callback_data\": \"su_schedule_open\" }, { \"text\": \"📚 Content\", \"callback_data\": \"su_content_open\" } ]] } }) }}",
         "options": {}
-      }
-    },
-    {
-      "id": "f9014f4c-7b5d-4936-b3f1-8fd356ff8e50",
-      "name": "Reply: Pick Cadence",
+      },
+      "id": "46c6557c-cfd0-46b1-a1b7-7c476a1605a7",
+      "name": "Reply: Settings Menu",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         816,
         608
-      ],
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1170,17 +1189,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Route').item.json.chat_id), text: \"Daily or weekly?\", reply_markup: { inline_keyboard: [[ { \"text\": \"📅 Daily\", \"callback_data\": \"su_cadence_daily\" }, { \"text\": \"🗓 Weekly\", \"callback_data\": \"su_cadence_weekly\" } ]] } }) }}",
         "options": {}
-      }
-    },
-    {
-      "id": "2bdb8d8a-4918-4687-9be1-7104d958cef8",
-      "name": "Reply: Pick Day",
+      },
+      "id": "f9014f4c-7b5d-4936-b3f1-8fd356ff8e50",
+      "name": "Reply: Pick Cadence",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         816,
         800
-      ],
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1188,30 +1207,30 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Route').item.json.chat_id), text: \"Pick a day:\", reply_markup: { inline_keyboard: [[{\"text\":\"Mon\",\"callback_data\":\"su_day_1\"},{\"text\":\"Tue\",\"callback_data\":\"su_day_2\"},{\"text\":\"Wed\",\"callback_data\":\"su_day_3\"},{\"text\":\"Thu\",\"callback_data\":\"su_day_4\"}],[{\"text\":\"Fri\",\"callback_data\":\"su_day_5\"},{\"text\":\"Sat\",\"callback_data\":\"su_day_6\"},{\"text\":\"Sun\",\"callback_data\":\"su_day_0\"}]] } }) }}",
         "options": {}
-      }
+      },
+      "id": "2bdb8d8a-4918-4687-9be1-7104d958cef8",
+      "name": "Reply: Pick Day",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        816,
+        992
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const day = $('Route').item.json.day;\nconst chat_id = $('Route').item.json.chat_id;\nconst mk = (h, emoji) => ({ text: `${emoji} ${h}:00`,\n  callback_data: day != null ? `su_hour_weekly_${day}_${h}` : `su_hour_daily_${h}` });\nconst buttons = [[mk(9, '☀️'), mk(14, '🌤️'), mk(19, '🌙')]];\nreturn [{ json: { chat_id: chat_id, body: JSON.stringify({\n  chat_id: chat_id, text: 'Pick a time (Kyiv time):',\n  reply_markup: { inline_keyboard: buttons } }) } }];"
+      },
       "id": "37cc6ff6-6404-47fa-b235-9073bebe2444",
       "name": "Build Hour Picker",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         816,
-        992
-      ],
-      "parameters": {
-        "jsCode": "const day = $('Route').item.json.day;\nconst chat_id = $('Route').item.json.chat_id;\nconst mk = (h, emoji) => ({ text: `${emoji} ${h}:00`,\n  callback_data: day != null ? `su_hour_weekly_${day}_${h}` : `su_hour_daily_${h}` });\nconst buttons = [[mk(9, '☀️'), mk(14, '🌤️'), mk(19, '🌙')]];\nreturn [{ json: { chat_id: chat_id, body: JSON.stringify({\n  chat_id: chat_id, text: 'Pick a time (Kyiv time):',\n  reply_markup: { inline_keyboard: buttons } }) } }];"
-      }
+        1184
+      ]
     },
     {
-      "id": "8445d6fe-3420-4789-9e4c-4343601c9d64",
-      "name": "Reply: Pick Hour",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1040,
-        992
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1219,30 +1238,30 @@
         "specifyBody": "json",
         "jsonBody": "={{ $json.body }}",
         "options": {}
-      }
+      },
+      "id": "8445d6fe-3420-4789-9e4c-4343601c9d64",
+      "name": "Reply: Pick Hour",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        1184
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nconst cadence = j.day != null ? 'weekly' : 'daily';\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nconst when = cadence === 'weekly'\n  ? `every ${dayNames[j.day]} at ${j.hour}:00`\n  : `every day at ${j.hour}:00`;\nreturn [{ json: {\n  chat_id: j.chat_id,\n  body: JSON.stringify({ chat_id: Number(j.chat_id), cadence,\n    send_hour: j.hour, send_day: j.day }),\n  reply_text: `Updated! You'll get a question ${when} (Kyiv time).`,\n} }];"
+      },
       "id": "78111fd5-35a7-46d2-8511-67250242d508",
       "name": "Build Save Schedule",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         816,
-        1184
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nconst cadence = j.day != null ? 'weekly' : 'daily';\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nconst when = cadence === 'weekly'\n  ? `every ${dayNames[j.day]} at ${j.hour}:00`\n  : `every day at ${j.hour}:00`;\nreturn [{ json: {\n  chat_id: j.chat_id,\n  body: JSON.stringify({ chat_id: Number(j.chat_id), cadence,\n    send_hour: j.hour, send_day: j.day }),\n  reply_text: `Updated! You'll get a question ${when} (Kyiv time).`,\n} }];"
-      }
+        1376
+      ]
     },
     {
-      "id": "c67ec1ce-43cd-448b-9dd4-626d33dcf596",
-      "name": "Upsert Schedule",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        1040,
-        1184
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.subscribers (chat_id, cadence, send_hour, send_day) VALUES ($1, $2, $3, $4) ON CONFLICT (chat_id) DO UPDATE SET cadence = EXCLUDED.cadence, send_hour = EXCLUDED.send_hour, send_day = EXCLUDED.send_day",
@@ -1250,6 +1269,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}, {{ $('Route').item.json.day != null ? 'weekly' : 'daily' }}, {{ $('Route').item.json.hour }}, {{ $('Route').item.json.day }}"
         }
       },
+      "id": "c67ec1ce-43cd-448b-9dd4-626d33dcf596",
+      "name": "Upsert Schedule",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1040,
+        1376
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1258,14 +1285,6 @@
       }
     },
     {
-      "id": "d48cbab8-117f-457b-afff-96a959dc6f81",
-      "name": "Reply: Schedule Saved",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1264,
-        1184
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1273,17 +1292,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Normalize Update').item.json.chat_id), text: $('Build Save Schedule').item.json.reply_text }) }}",
         "options": {}
-      }
-    },
-    {
-      "id": "1c81e53b-5f31-45b2-a25c-cca3f9006756",
-      "name": "Reply: Content Menu",
+      },
+      "id": "d48cbab8-117f-457b-afff-96a959dc6f81",
+      "name": "Reply: Schedule Saved",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        816,
+        1264,
         1376
-      ],
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1291,30 +1310,30 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Route').item.json.chat_id), text: \"What do you want to practice?\", reply_markup: { inline_keyboard: [[ { \"text\": \"📚 Vocab\", \"callback_data\": \"su_content_vocab\" }, { \"text\": \"📝 Grammar\", \"callback_data\": \"su_content_grammar\" }, { \"text\": \"🔀 Both\", \"callback_data\": \"su_content_both\" } ]] } }) }}",
         "options": {}
-      }
+      },
+      "id": "1c81e53b-5f31-45b2-a25c-cca3f9006756",
+      "name": "Reply: Content Menu",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        816,
+        1568
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nconst labels = { vocab: 'vocabulary only', grammar: 'grammar only',\n  both: 'a mix of vocabulary and grammar' };\nreturn [{ json: {\n  chat_id: j.chat_id,\n  body: JSON.stringify({ chat_id: Number(j.chat_id), content_pref: j.content_pref }),\n  reply_text: `Updated! You'll now get ${labels[j.content_pref]}.`,\n} }];"
+      },
       "id": "439b68fb-67b4-49e6-b208-17e68a68bc1c",
       "name": "Build Save Content",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         816,
-        1568
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nconst labels = { vocab: 'vocabulary only', grammar: 'grammar only',\n  both: 'a mix of vocabulary and grammar' };\nreturn [{ json: {\n  chat_id: j.chat_id,\n  body: JSON.stringify({ chat_id: Number(j.chat_id), content_pref: j.content_pref }),\n  reply_text: `Updated! You'll now get ${labels[j.content_pref]}.`,\n} }];"
-      }
+        1760
+      ]
     },
     {
-      "id": "5cbddc38-9adb-439d-a133-f1f898fa2309",
-      "name": "Upsert Content Pref",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        1040,
-        1568
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.subscribers (chat_id, content_pref) VALUES ($1, $2) ON CONFLICT (chat_id) DO UPDATE SET content_pref = EXCLUDED.content_pref",
@@ -1322,6 +1341,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}, {{ $('Route').item.json.content_pref }}"
         }
       },
+      "id": "5cbddc38-9adb-439d-a133-f1f898fa2309",
+      "name": "Upsert Content Pref",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1040,
+        1760
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1330,14 +1357,6 @@
       }
     },
     {
-      "id": "9c277e3b-3b36-4037-8e38-ae54063bc68c",
-      "name": "Reply: Content Saved",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1264,
-        1568
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1345,17 +1364,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Build Save Content').item.json.chat_id), text: $('Build Save Content').item.json.reply_text }) }}",
         "options": {}
-      }
+      },
+      "id": "9c277e3b-3b36-4037-8e38-ae54063bc68c",
+      "name": "Reply: Content Saved",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1264,
+        1760
+      ]
     },
     {
-      "id": "05e33b22-49e0-4ff1-85b1-85d158e34095",
-      "name": "Upsert Pause",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        816,
-        2048
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.subscribers (chat_id, active) VALUES ($1, false) ON CONFLICT (chat_id) DO UPDATE SET active = EXCLUDED.active",
@@ -1363,6 +1382,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}"
         }
       },
+      "id": "05e33b22-49e0-4ff1-85b1-85d158e34095",
+      "name": "Upsert Pause",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        816,
+        2240
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1371,14 +1398,6 @@
       }
     },
     {
-      "id": "e6c6649a-5e63-4565-8e4f-d1bd6264089d",
-      "name": "Reply: Paused",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1040,
-        2048
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1386,17 +1405,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Normalize Update').item.json.chat_id), text: \"Paused. Send /resume anytime to start again.\" }) }}",
         "options": {}
-      }
+      },
+      "id": "e6c6649a-5e63-4565-8e4f-d1bd6264089d",
+      "name": "Reply: Paused",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        2240
+      ]
     },
     {
-      "id": "14f4e4ee-8204-41ce-a1e0-b5c0c2afeea0",
-      "name": "Upsert Resume",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        816,
-        2240
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.subscribers (chat_id, active) VALUES ($1, true) ON CONFLICT (chat_id) DO UPDATE SET active = EXCLUDED.active",
@@ -1404,6 +1423,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}"
         }
       },
+      "id": "14f4e4ee-8204-41ce-a1e0-b5c0c2afeea0",
+      "name": "Upsert Resume",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        816,
+        2432
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1412,14 +1439,6 @@
       }
     },
     {
-      "id": "ab815567-1f21-4a50-8c97-78be4d549ede",
-      "name": "Reply: Resumed",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1040,
-        2240
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1427,17 +1446,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Normalize Update').item.json.chat_id), text: \"Resumed! You'll get questions again on your usual schedule.\" }) }}",
         "options": {}
-      }
+      },
+      "id": "ab815567-1f21-4a50-8c97-78be4d549ede",
+      "name": "Reply: Resumed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        2432
+      ]
     },
     {
-      "id": "6bdba608-e963-4b76-b595-58b5348d9b81",
-      "name": "Record Answer",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        816,
-        2432
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.answers (chat_id, question_id, correct, content_type) VALUES ($1, $2, $3, $4)",
@@ -1445,6 +1464,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}, {{ Number($json.question_id) }}, {{ $json.correct }}, {{ $json.content_type }}"
         }
       },
+      "id": "6bdba608-e963-4b76-b595-58b5348d9b81",
+      "name": "Record Answer",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        816,
+        2624
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1453,14 +1480,6 @@
       }
     },
     {
-      "id": "c47a2626-dfd8-45de-a85c-b52e85c4a201",
-      "name": "Reply: Answer Feedback",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2384,
-        2432
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1468,17 +1487,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($json.chat_id), text: $json.reply_text }) }}",
         "options": {}
-      }
-    },
-    {
-      "id": "e21b09d4-6ece-432a-bd0d-6f203a8fdcd5",
-      "name": "Reply: Help",
+      },
+      "id": "c47a2626-dfd8-45de-a85c-b52e85c4a201",
+      "name": "Reply: Answer Feedback",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        816,
+        2384,
         2624
-      ],
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1486,17 +1505,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Normalize Update').item.json.chat_id), text: \"/start - subscribe\\n/settings - change frequency or content\\n/pause - pause questions\\n/resume - resume questions\\n/question - get a question right now (a 3-question round)\" }) }}",
         "options": {}
-      }
-    },
-    {
-      "id": "c9474470-744b-4040-af4b-a4f9b27607e5",
-      "name": "Show Typing",
+      },
+      "id": "e21b09d4-6ece-432a-bd0d-6f203a8fdcd5",
+      "name": "Reply: Help",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        368,
-        1184
-      ],
+        816,
+        2816
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendChatAction",
@@ -1514,17 +1533,17 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "c9474470-744b-4040-af4b-a4f9b27607e5",
+      "name": "Show Typing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        368,
+        1568
+      ]
     },
     {
-      "id": "54892724-3acd-4dde-ac47-699012ef1954",
-      "name": "Get Existing Schedule",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        816,
-        224
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT cadence, send_hour, send_day FROM matkovska_quiz_bot.subscribers WHERE chat_id = $1",
@@ -1532,6 +1551,15 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}"
         }
       },
+      "id": "54892724-3acd-4dde-ac47-699012ef1954",
+      "name": "Get Existing Schedule",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        816,
+        416
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1540,27 +1568,19 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nconst row = $input.first().json;\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nlet text;\nif (row && row.cadence) {\n  const when = row.cadence === 'weekly'\n    ? `every ${dayNames[row.send_day]} at ${row.send_hour}:00`\n    : `every day at ${row.send_hour}:00`;\n  text = `Welcome back! Your current schedule: ${when} (Kyiv time).\\n⚙️ Change frequency anytime with /settings.`;\n} else {\n  text = \"You're subscribed! One question a day at 9:00 (Kyiv time).\\n⚙️ Change frequency anytime with /settings.\";\n}\nreturn [{ json: { chat_id: j.chat_id, reply_text: text } }];"
+      },
       "id": "1d063e18-4691-4b06-b287-17c2caddc499",
       "name": "Build Start Reply",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1040,
-        224
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nconst row = $input.first().json;\nconst dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];\nlet text;\nif (row && row.cadence) {\n  const when = row.cadence === 'weekly'\n    ? `every ${dayNames[row.send_day]} at ${row.send_hour}:00`\n    : `every day at ${row.send_hour}:00`;\n  text = `Welcome back! Your current schedule: ${when} (Kyiv time).\\n⚙️ Change frequency anytime with /settings.`;\n} else {\n  text = \"You're subscribed! One question a day at 9:00 (Kyiv time).\\n⚙️ Change frequency anytime with /settings.\";\n}\nreturn [{ json: { chat_id: j.chat_id, reply_text: text } }];"
-      }
+        416
+      ]
     },
     {
-      "id": "ab7ffb55-204c-4d41-8a23-a6d2d4cc7122",
-      "name": "Get Recent Answers",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        1040,
-        2432
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT correct FROM matkovska_quiz_bot.answers WHERE chat_id = $1 ORDER BY answered_at DESC LIMIT 50",
@@ -1568,6 +1588,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}"
         }
       },
+      "id": "ab7ffb55-204c-4d41-8a23-a6d2d4cc7122",
+      "name": "Get Recent Answers",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1040,
+        2624
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1576,14 +1604,6 @@
       }
     },
     {
-      "id": "624e6ea5-18f0-4dae-900d-f09f745d4f97",
-      "name": "Is Grammar?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1264,
-        2432
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1605,17 +1625,17 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "624e6ea5-18f0-4dae-900d-f09f745d4f97",
+      "name": "Is Grammar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1264,
+        2624
+      ]
     },
     {
-      "id": "b601c096-50d8-423a-9542-95811455c0a1",
-      "name": "Get Grammar Question",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        1712,
-        2224
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT options, correct_option_index, explanation FROM matkovska_quiz_bot.grammar_questions WHERE id = $1",
@@ -1623,6 +1643,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.question_id) }}"
         }
       },
+      "id": "b601c096-50d8-423a-9542-95811455c0a1",
+      "name": "Get Grammar Question",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1712,
+        2416
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1631,27 +1659,19 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nconst row = $input.first().json;\nconst CORRECT_PHRASES = ['✅ Correct!', '✅ Nailed it!', '✅ Yes, exactly!', '✅ Nice one!', '✅ Spot on!'];\nconst WRONG_OPENERS = ['❌ Not quite', '❌ Almost', '❌ Close, but not quite', '❌ Nope'];\nconst pick = (arr) => arr[Math.floor(Math.random() * arr.length)];\nlet text;\nif (j.correct) {\n  text = pick(CORRECT_PHRASES);\n} else {\n  const correctText = row && row.options && row.options[row.correct_option_index];\n  text = correctText ? `${pick(WRONG_OPENERS)} — it's \"${correctText}\".` : pick(WRONG_OPENERS) + '.';\n}\nif (row && row.explanation) text += `\\n\\n💡 ${row.explanation}`;\nreturn [{ json: { chat_id: j.chat_id, text } }];"
+      },
       "id": "b849d01b-9d0a-4469-af93-89581d902c66",
       "name": "Build Grammar Feedback Text",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1936,
-        2224
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nconst row = $input.first().json;\nconst CORRECT_PHRASES = ['✅ Correct!', '✅ Nailed it!', '✅ Yes, exactly!', '✅ Nice one!', '✅ Spot on!'];\nconst WRONG_OPENERS = ['❌ Not quite', '❌ Almost', '❌ Close, but not quite', '❌ Nope'];\nconst pick = (arr) => arr[Math.floor(Math.random() * arr.length)];\nlet text;\nif (j.correct) {\n  text = pick(CORRECT_PHRASES);\n} else {\n  const correctText = row && row.options && row.options[row.correct_option_index];\n  text = correctText ? `${pick(WRONG_OPENERS)} — it's \"${correctText}\".` : pick(WRONG_OPENERS) + '.';\n}\nif (row && row.explanation) text += `\\n\\n💡 ${row.explanation}`;\nreturn [{ json: { chat_id: j.chat_id, text } }];"
-      }
+        2416
+      ]
     },
     {
-      "id": "157d01a9-fd10-43ee-a260-d385c7f7f138",
-      "name": "Is Correct (Vocab)?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1488,
-        2528
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1673,30 +1693,30 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "157d01a9-fd10-43ee-a260-d385c7f7f138",
+      "name": "Is Correct (Vocab)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1488,
+        2720
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nconst CORRECT_PHRASES = ['✅ Correct!', '✅ Nailed it!', '✅ Yes, exactly!', '✅ Nice one!', '✅ Spot on!'];\nconst pick = (arr) => arr[Math.floor(Math.random() * arr.length)];\nreturn [{ json: { chat_id: j.chat_id, text: pick(CORRECT_PHRASES) } }];"
+      },
       "id": "bbee6b86-a62f-432b-a4bd-a591f7f4a7d8",
       "name": "Build Vocab Correct Text",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1936,
-        2416
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nconst CORRECT_PHRASES = ['✅ Correct!', '✅ Nailed it!', '✅ Yes, exactly!', '✅ Nice one!', '✅ Spot on!'];\nconst pick = (arr) => arr[Math.floor(Math.random() * arr.length)];\nreturn [{ json: { chat_id: j.chat_id, text: pick(CORRECT_PHRASES) } }];"
-      }
+        2608
+      ]
     },
     {
-      "id": "a092da66-33ee-4140-8403-d15de566f64b",
-      "name": "Get Vocab Translation",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        1712,
-        2624
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT translation FROM matkovska_quiz_bot.vocab_words WHERE id = $1",
@@ -1704,6 +1724,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.question_id) }}"
         }
       },
+      "id": "a092da66-33ee-4140-8403-d15de566f64b",
+      "name": "Get Vocab Translation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1712,
+        2816
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1712,40 +1740,32 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nconst row = $input.first().json;\nconst WRONG_OPENERS = ['❌ Not quite', '❌ Almost', '❌ Close, but not quite', '❌ Nope'];\nconst pick = (arr) => arr[Math.floor(Math.random() * arr.length)];\nconst translation = row && row.translation;\nconst text = translation ? `${pick(WRONG_OPENERS)} — it's \"${translation}\".` : pick(WRONG_OPENERS) + '.';\nreturn [{ json: { chat_id: j.chat_id, text } }];"
+      },
       "id": "9f1cdd7b-01ca-41b6-adf9-77d74d80b5fc",
       "name": "Build Vocab Wrong Text",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1936,
-        2624
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nconst row = $input.first().json;\nconst WRONG_OPENERS = ['❌ Not quite', '❌ Almost', '❌ Close, but not quite', '❌ Nope'];\nconst pick = (arr) => arr[Math.floor(Math.random() * arr.length)];\nconst translation = row && row.translation;\nconst text = translation ? `${pick(WRONG_OPENERS)} — it's \"${translation}\".` : pick(WRONG_OPENERS) + '.';\nreturn [{ json: { chat_id: j.chat_id, text } }];"
-      }
+        2816
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const text0 = $json.text;\nconst chatId = $json.chat_id;\nconst recent = $('Get Recent Answers').all().map(i => i.json);\nlet streak = 0;\nfor (const row of recent) { if (row.correct) streak++; else break; }\nlet text = text0;\nif (streak >= 2) text += `\\n🔥 ${streak} in a row!`;\nreturn [{ json: { chat_id: chatId, reply_text: text } }];"
+      },
       "id": "af7e1f79-f7a2-409e-b2ce-b5c5068495da",
       "name": "Finalize Feedback Text",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         2160,
-        2432
-      ],
-      "parameters": {
-        "jsCode": "const text0 = $json.text;\nconst chatId = $json.chat_id;\nconst recent = $('Get Recent Answers').all().map(i => i.json);\nlet streak = 0;\nfor (const row of recent) { if (row.correct) streak++; else break; }\nlet text = text0;\nif (streak >= 2) text += `\\n🔥 ${streak} in a row!`;\nreturn [{ json: { chat_id: chatId, reply_text: text } }];"
-      }
+        2624
+      ]
     },
     {
-      "id": "78eb44fa-be3b-47f7-8564-352f77937676",
-      "name": "Upsert Session (Scheduled)",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        368,
-        0
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.sessions (chat_id, question_index, correct_count, asked_vocab_ids, asked_grammar_ids) VALUES ($1, 1, 0, ARRAY[]::bigint[], ARRAY[]::bigint[]) ON CONFLICT (chat_id) DO UPDATE SET question_index = EXCLUDED.question_index, correct_count = EXCLUDED.correct_count, asked_vocab_ids = EXCLUDED.asked_vocab_ids, asked_grammar_ids = EXCLUDED.asked_grammar_ids",
@@ -1753,6 +1773,14 @@
           "queryReplacement": "={{ Number($('Get Due Subscribers').item.json.chat_id) }}"
         }
       },
+      "id": "78eb44fa-be3b-47f7-8564-352f77937676",
+      "name": "Upsert Session (Scheduled)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        368,
+        96
+      ],
       "onError": "continueErrorOutput",
       "credentials": {
         "postgres": {
@@ -1762,14 +1790,6 @@
       }
     },
     {
-      "id": "6eb05d64-12d2-4347-98f2-6e521d284966",
-      "name": "Send Next Question (Scheduled)",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        592,
-        0
-      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1793,17 +1813,17 @@
         "options": {
           "waitForSubWorkflow": true
         }
-      }
+      },
+      "id": "6eb05d64-12d2-4347-98f2-6e521d284966",
+      "name": "Send Next Question (Scheduled)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        0
+      ]
     },
     {
-      "id": "88bf364a-1a24-494d-b19d-a873e8441fe1",
-      "name": "Get Subscriber (On Demand)",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        816,
-        1856
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT chat_id, content_pref FROM matkovska_quiz_bot.subscribers WHERE chat_id = $1",
@@ -1811,6 +1831,15 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}"
         }
       },
+      "id": "88bf364a-1a24-494d-b19d-a873e8441fe1",
+      "name": "Get Subscriber (On Demand)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        816,
+        2048
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1819,14 +1848,6 @@
       }
     },
     {
-      "id": "f31c4a05-1b1f-440c-9ef6-584d65b6bbaa",
-      "name": "Is Subscribed?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1040,
-        1856
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1848,30 +1869,30 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "f31c4a05-1b1f-440c-9ef6-584d65b6bbaa",
+      "name": "Is Subscribed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        2048
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nreturn [{ json: { chat_id: j.chat_id, text: 'Use /start first to subscribe, then you can ask for a question anytime with /question.' } }];"
+      },
       "id": "e6e2d422-b804-42d6-bf3f-17816b1c6e1f",
       "name": "Build Not Subscribed Text",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1264,
-        2048
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nreturn [{ json: { chat_id: j.chat_id, text: 'Use /start first to subscribe, then you can ask for a question anytime with /question.' } }];"
-      }
+        2240
+      ]
     },
     {
-      "id": "127135f8-d550-49cd-b761-d15448aabf5e",
-      "name": "Reply: Not Subscribed",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1488,
-        2048
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -1879,17 +1900,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($json.chat_id), text: $json.text }) }}",
         "options": {}
-      }
+      },
+      "id": "127135f8-d550-49cd-b761-d15448aabf5e",
+      "name": "Reply: Not Subscribed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1488,
+        2240
+      ]
     },
     {
-      "id": "2624a6d7-8ff1-4bd7-aaee-aed2ab44bf79",
-      "name": "Upsert Session (On Demand)",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        1264,
-        1760
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "INSERT INTO matkovska_quiz_bot.sessions (chat_id, question_index, correct_count, asked_vocab_ids, asked_grammar_ids) VALUES ($1, 1, 0, ARRAY[]::bigint[], ARRAY[]::bigint[]) ON CONFLICT (chat_id) DO UPDATE SET question_index = EXCLUDED.question_index, correct_count = EXCLUDED.correct_count, asked_vocab_ids = EXCLUDED.asked_vocab_ids, asked_grammar_ids = EXCLUDED.asked_grammar_ids",
@@ -1897,6 +1918,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}"
         }
       },
+      "id": "2624a6d7-8ff1-4bd7-aaee-aed2ab44bf79",
+      "name": "Upsert Session (On Demand)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1264,
+        1952
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1905,14 +1934,6 @@
       }
     },
     {
-      "id": "cf8b6f64-de47-4646-9859-6103b2fb972d",
-      "name": "Send Next Question (On Demand)",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        1488,
-        1760
-      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -1936,17 +1957,17 @@
         "options": {
           "waitForSubWorkflow": true
         }
-      }
+      },
+      "id": "cf8b6f64-de47-4646-9859-6103b2fb972d",
+      "name": "Send Next Question (On Demand)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1488,
+        1952
+      ]
     },
     {
-      "id": "74afaa96-1343-406a-b712-afbce445a52a",
-      "name": "Get Session",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        2608,
-        2432
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT question_index, correct_count, asked_vocab_ids, asked_grammar_ids FROM matkovska_quiz_bot.sessions WHERE chat_id = $1",
@@ -1954,6 +1975,14 @@
           "queryReplacement": "={{ Number($('Route').item.json.chat_id) }}"
         }
       },
+      "id": "74afaa96-1343-406a-b712-afbce445a52a",
+      "name": "Get Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2608,
+        2624
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -1962,14 +1991,6 @@
       }
     },
     {
-      "id": "48a4cd57-117a-4d99-bfd5-ae4244ba20f9",
-      "name": "Session Exists?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        2832,
-        2432
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1991,30 +2012,30 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "48a4cd57-117a-4d99-bfd5-ae4244ba20f9",
+      "name": "Session Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2832,
+        2624
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Route').item.json;\nconst session = $json;\nlet askedVocabIds = session.asked_vocab_ids || [];\nlet askedGrammarIds = session.asked_grammar_ids || [];\nif (j.content_type === 'grammar') askedGrammarIds = [...askedGrammarIds, Number(j.question_id)];\nelse askedVocabIds = [...askedVocabIds, Number(j.question_id)];\nconst questionIndex = session.question_index + 1;\nconst correctCount = session.correct_count + (j.correct ? 1 : 0);\nreturn [{ json: { chat_id: j.chat_id, questionIndex, correctCount, askedVocabIds, askedGrammarIds } }];"
+      },
       "id": "ca6191fd-865c-4460-af93-b232b082b8f4",
       "name": "Compute New Session State",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         3056,
-        2432
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Route').item.json;\nconst session = $json;\nlet askedVocabIds = session.asked_vocab_ids || [];\nlet askedGrammarIds = session.asked_grammar_ids || [];\nif (j.content_type === 'grammar') askedGrammarIds = [...askedGrammarIds, Number(j.question_id)];\nelse askedVocabIds = [...askedVocabIds, Number(j.question_id)];\nconst questionIndex = session.question_index + 1;\nconst correctCount = session.correct_count + (j.correct ? 1 : 0);\nreturn [{ json: { chat_id: j.chat_id, questionIndex, correctCount, askedVocabIds, askedGrammarIds } }];"
-      }
+        2624
+      ]
     },
     {
-      "id": "f51161c6-d623-4315-8858-86a428e6f1af",
-      "name": "Round Complete?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        3280,
-        2432
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -2036,17 +2057,17 @@
           ]
         },
         "options": {}
-      }
+      },
+      "id": "f51161c6-d623-4315-8858-86a428e6f1af",
+      "name": "Round Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3280,
+        2624
+      ]
     },
     {
-      "id": "c9d7a6ae-6282-43e9-8e00-0bf31af06fd2",
-      "name": "Delete Session (Complete)",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        3504,
-        2336
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "DELETE FROM matkovska_quiz_bot.sessions WHERE chat_id = $1",
@@ -2054,6 +2075,14 @@
           "queryReplacement": "={{ Number($json.chat_id) }}"
         }
       },
+      "id": "c9d7a6ae-6282-43e9-8e00-0bf31af06fd2",
+      "name": "Delete Session (Complete)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        3504,
+        2528
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -2062,14 +2091,6 @@
       }
     },
     {
-      "id": "19b3329b-870a-4046-9250-44590e500560",
-      "name": "Get Recent Answers (Summary)",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        3728,
-        2336
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT correct FROM matkovska_quiz_bot.answers WHERE chat_id = $1 ORDER BY answered_at DESC LIMIT 50",
@@ -2077,6 +2098,14 @@
           "queryReplacement": "={{ Number($('Compute New Session State').item.json.chat_id) }}"
         }
       },
+      "id": "19b3329b-870a-4046-9250-44590e500560",
+      "name": "Get Recent Answers (Summary)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        3728,
+        2528
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -2085,27 +2114,19 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const j = $('Compute New Session State').item.json;\nconst recent = $input.all().map(i => i.json);\nlet streak = 0;\nfor (const row of recent) { if (row.correct) streak++; else break; }\nlet text = `🏁 Round complete: ${j.correctCount}/3`;\nif (streak >= 2) text += `\\n🔥 ${streak} in a row!`;\nreturn [{ json: { chat_id: j.chat_id, text } }];"
+      },
       "id": "95b14f1c-7272-4280-8444-151652928fb4",
       "name": "Build Round Summary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         3952,
-        2336
-      ],
-      "parameters": {
-        "jsCode": "const j = $('Compute New Session State').item.json;\nconst recent = $input.all().map(i => i.json);\nlet streak = 0;\nfor (const row of recent) { if (row.correct) streak++; else break; }\nlet text = `🏁 Round complete: ${j.correctCount}/3`;\nif (streak >= 2) text += `\\n🔥 ${streak} in a row!`;\nreturn [{ json: { chat_id: j.chat_id, text } }];"
-      }
+        2528
+      ]
     },
     {
-      "id": "24cf1fc0-9315-4e84-8509-8dfb6011b32f",
-      "name": "Reply: Round Summary",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        4176,
-        2336
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -2113,22 +2134,30 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: Number($json.chat_id), text: $json.text }) }}",
         "options": {}
-      }
+      },
+      "id": "24cf1fc0-9315-4e84-8509-8dfb6011b32f",
+      "name": "Reply: Round Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4176,
+        2528
+      ]
     },
     {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ 'UPDATE matkovska_quiz_bot.sessions SET question_index = ' + $json.questionIndex + ', correct_count = ' + $json.correctCount + ', asked_vocab_ids = ARRAY[' + $json.askedVocabIds.map(Number).join(',') + ']::bigint[], asked_grammar_ids = ARRAY[' + $json.askedGrammarIds.map(Number).join(',') + ']::bigint[] WHERE chat_id = ' + Number($json.chat_id) }}",
+        "options": {}
+      },
       "id": "b36024a4-15ff-45ef-a5c1-5b6adb4ae7c6",
       "name": "Patch Session (Continue)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
         3504,
-        2528
+        2720
       ],
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "{{ 'UPDATE matkovska_quiz_bot.sessions SET question_index = ' + $json.questionIndex + ', correct_count = ' + $json.correctCount + ', asked_vocab_ids = ARRAY[' + $json.askedVocabIds.map(Number).join(',') + ']::bigint[], asked_grammar_ids = ARRAY[' + $json.askedGrammarIds.map(Number).join(',') + ']::bigint[] WHERE chat_id = ' + Number($json.chat_id) }}",
-        "options": {}
-      },
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -2137,14 +2166,6 @@
       }
     },
     {
-      "id": "84ab4ddb-2732-4bd9-ac85-3cb4d6731234",
-      "name": "Get Subscriber Content Pref",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
-      "position": [
-        3728,
-        2528
-      ],
       "parameters": {
         "operation": "executeQuery",
         "query": "SELECT content_pref FROM matkovska_quiz_bot.subscribers WHERE chat_id = $1",
@@ -2152,6 +2173,14 @@
           "queryReplacement": "={{ Number($('Compute New Session State').item.json.chat_id) }}"
         }
       },
+      "id": "84ab4ddb-2732-4bd9-ac85-3cb4d6731234",
+      "name": "Get Subscriber Content Pref",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        3728,
+        2720
+      ],
       "credentials": {
         "postgres": {
           "id": "Pfck0EZrKZMEBgFo",
@@ -2160,14 +2189,6 @@
       }
     },
     {
-      "id": "7bb40d01-bf3a-4e56-b240-c623607f3189",
-      "name": "Send Next Question (Advance)",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        3952,
-        2528
-      ],
       "parameters": {
         "workflowId": {
           "__rl": true,
@@ -2191,43 +2212,43 @@
         "options": {
           "waitForSubWorkflow": true
         }
-      }
+      },
+      "id": "7bb40d01-bf3a-4e56-b240-c623607f3189",
+      "name": "Send Next Question (Advance)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3952,
+        2720
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const chatId = $('Route').item.json.chat_id;\nconst ADMIN_CHAT_IDS = [863273840, 5507304303]; // Oleksandr, Matkovska\n\nif (!ADMIN_CHAT_IDS.includes(Number(chatId))) {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n    body: { chat_id: chatId, text: \"That command isn't available for your account.\" },\n    json: true,\n  });\n  return [];\n}\n\nconst url = `https://n8n.englishpusher.in.ua/webhook/matkovska-quiz-dashboard?token=${$env.DASHBOARD_ADMIN_TOKEN}`;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n  body: { chat_id: chatId, text: `\\u{1F4CA} <a href=\"${url}\">Open your Dashboard</a>`, parse_mode: 'HTML' },\n  json: true,\n});\nreturn [];"
+      },
       "id": "58a9f85f-a936-41a3-9531-872f13641240",
       "name": "Reply: Dashboard Link",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         816,
-        2816
-      ],
-      "parameters": {
-        "jsCode": "const chatId = $('Route').item.json.chat_id;\nconst ADMIN_CHAT_IDS = [863273840, 5507304303]; // Oleksandr, Matkovska\n\nif (!ADMIN_CHAT_IDS.includes(Number(chatId))) {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n    body: { chat_id: chatId, text: \"That command isn't available for your account.\" },\n    json: true,\n  });\n  return [];\n}\n\nconst url = `https://n8n.englishpusher.in.ua/webhook/matkovska-quiz-dashboard?token=${$env.DASHBOARD_ADMIN_TOKEN}`;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n  body: { chat_id: chatId, text: `\\u{1F4CA} <a href=\"${url}\">Open your Dashboard</a>`, parse_mode: 'HTML' },\n  json: true,\n});\nreturn [];"
-      }
+        3008
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const chatId = $('Route').item.json.chat_id;\n\nconst sub = await this.helpers.httpRequest({\n  method: 'GET',\n  url: `${$env.SUPABASE_URL}/rest/v1/subscribers`,\n  qs: { chat_id: `eq.${chatId}`, select: 'dashboard_token' },\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Accept-Profile': 'matkovska_quiz_bot' },\n  json: true,\n});\n\nif (!sub || !sub[0]) {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n    body: { chat_id: chatId, text: 'Use /start first to subscribe, then /mystats will show your personal link.' },\n    json: true,\n  });\n  return [];\n}\n\nconst url = `https://n8n.englishpusher.in.ua/webhook/matkovska-quiz-dashboard?token=${sub[0].dashboard_token}`;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n  body: { chat_id: chatId, text: `\\u{1F4CA} <a href=\"${url}\">Your personal stats</a>`, parse_mode: 'HTML' },\n  json: true,\n});\nreturn [];"
+      },
       "id": "6e87beca-cb66-48e2-8835-99f598031349",
       "name": "My Stats Link",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         816,
-        3008
-      ],
-      "parameters": {
-        "jsCode": "const chatId = $('Route').item.json.chat_id;\n\nconst sub = await this.helpers.httpRequest({\n  method: 'GET',\n  url: `${$env.SUPABASE_URL}/rest/v1/subscribers`,\n  qs: { chat_id: `eq.${chatId}`, select: 'dashboard_token' },\n  headers: { apikey: $env.SUPABASE_SERVICE_ROLE_KEY,\n             Authorization: `Bearer ${$env.SUPABASE_SERVICE_ROLE_KEY}`,\n             'Accept-Profile': 'matkovska_quiz_bot' },\n  json: true,\n});\n\nif (!sub || !sub[0]) {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n    body: { chat_id: chatId, text: 'Use /start first to subscribe, then /mystats will show your personal link.' },\n    json: true,\n  });\n  return [];\n}\n\nconst url = `https://n8n.englishpusher.in.ua/webhook/matkovska-quiz-dashboard?token=${sub[0].dashboard_token}`;\nawait this.helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${$env.TELEGRAM_MATKOVSKA_BOT_TOKEN}/sendMessage`,\n  body: { chat_id: chatId, text: `\\u{1F4CA} <a href=\"${url}\">Your personal stats</a>`, parse_mode: 'HTML' },\n  json: true,\n});\nreturn [];"
-      }
+        3200
+      ]
     },
     {
-      "id": "55ec7907-ab54-48f3-af53-619bcf96239a",
-      "name": "Notify Oleksandr: Scheduled Send Failed",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
-      "position": [
-        368,
-        176
-      ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -2235,17 +2256,17 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: 863273840, text: '⚠️ Matkovska Quiz Bot: failed to send question to ' + ($json.first_name || '(unknown)') + ' (chat_id ' + $json.chat_id + '): ' + (($json.error && ($json.error.message || $json.error.description)) || 'unknown error') }) }}",
         "options": {}
-      }
-    },
-    {
-      "id": "23d59296-e6d4-4953-bb25-e89770702bb8",
-      "name": "Notify Oleksandr: Mark Sent Failed",
+      },
+      "id": "55ec7907-ab54-48f3-af53-619bcf96239a",
+      "name": "Notify Oleksandr: Scheduled Send Failed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        816,
-        176
-      ],
+        592,
+        192
+      ]
+    },
+    {
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
@@ -2253,58 +2274,86 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ chat_id: 863273840, text: '⚠️ Matkovska Quiz Bot: question sent but failed to record last_sent_at for chat_id ' + $json.chat_id + ': ' + (($json.error && ($json.error.message || $json.error.description)) || 'unknown error') }) }}",
         "options": {}
-      }
+      },
+      "id": "23d59296-e6d4-4953-bb25-e89770702bb8",
+      "name": "Notify Oleksandr: Mark Sent Failed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        0
+      ]
     },
     {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "matkovska-quiz-bot-new-subscriber",
+        "options": {}
+      },
       "id": "4c640547-8e65-4b8c-9d30-250a0d571a3d",
       "name": "New Subscriber Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
         -80,
-        3200
+        3424
       ],
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "matkovska-quiz-bot-new-subscriber",
-        "options": {}
-      },
       "webhookId": "e560bb55-25c0-4fae-b15a-00da221cc8ca"
     },
     {
+      "parameters": {
+        "jsCode": "const SECRET = $env.MATKOVSKA_NEW_SUBSCRIBER_WEBHOOK_SECRET;\nconst h = $json.headers || {};\nconst secret = h['x-webhook-secret'] || h['X-Webhook-Secret'] || '';\nconst b = $json.body || {};\nif (secret !== SECRET || b.type !== 'INSERT' || b.table !== 'subscribers') return [];\nconst r = b.record || {};\nreturn [{ json: { chat_id: r.chat_id, first_name: r.first_name || '' } }];"
+      },
       "id": "bad68edb-1d17-4c9c-91ab-ee1fb305294a",
       "name": "Check Webhook Secret",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         144,
-        3200
-      ],
-      "parameters": {
-        "jsCode": "const SECRET = $env.MATKOVSKA_NEW_SUBSCRIBER_WEBHOOK_SECRET;\nconst h = $json.headers || {};\nconst secret = h['x-webhook-secret'] || h['X-Webhook-Secret'] || '';\nconst b = $json.body || {};\nif (secret !== SECRET || b.type !== 'INSERT' || b.table !== 'subscribers') return [];\nconst r = b.record || {};\nreturn [{ json: { chat_id: r.chat_id, first_name: r.first_name || '' } }];"
-      }
+        3424
+      ]
     },
     {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: 863273840, text: '🆕 New Second Language Quiz Bot subscriber: ' + ($('Check Webhook Secret').item.json.first_name || '(no name)') + ' (chat_id ' + $('Check Webhook Secret').item.json.chat_id + ')' }) }}",
+        "options": {}
+      },
       "id": "bb6be70c-13e5-415c-bc47-3aa5e613258f",
       "name": "Notify Oleksandr: New Subscriber",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
         368,
-        3200
+        3424
+      ]
+    },
+    {
+      "id": "434e42ed-9cd3-41f2-bd9d-3e89aaeb73c8",
+      "name": "Reply: About",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        2624
       ],
       "parameters": {
         "method": "POST",
         "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_MATKOVSKA_BOT_TOKEN }}/sendMessage",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: 863273840, text: '🆕 New Matkovska Quiz Bot subscriber: ' + ($('Check Webhook Secret').item.json.first_name || '(no name)') + ' (chat_id ' + $('Check Webhook Secret').item.json.chat_id + ')' }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: Number($('Normalize Update').item.json.chat_id), text: \"🎓 This bot delivers English language quizzes for students of Kamianets-Podilskyi Ivan Ohienko National University, German-English Department.\\n\\n👩‍🏫 Created and managed by Mariya Matkovska.\\n\\n📚 You'll receive tasks daily/weekly to practice vocabulary and grammar.\\n\\n📊 Your results are used to track your progress and may be shared with your instructor.\\n\\n🔗 University page: <a href=\\\"https://kpnu.edu.ua/\\\">kpnu.edu.ua</a>\\n\\nGood luck! 🍀\", parse_mode: \"HTML\" }) }}",
         "options": {}
       }
     }
   ],
   "nodeGroups": [],
-  "activeVersion": null,
+  "activeVersion": {
+    "sameAsDraft": true
+  },
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"
