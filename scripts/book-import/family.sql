@@ -98,6 +98,57 @@ values
   ('family', 'Family', 'a boarding school', 'школа-інтернат', 'Judy attends a boarding school far from her parents'' home.', null, 'B2', 'book-import', true),
   ('family', 'Family', 'a senior citizen', 'особа похилого віку, пенсіонер', 'As a senior citizen, he receives a discount on public transport.', null, 'B2', 'book-import', true);
 
+-- Batch 4: "ESSENTIAL VOCABULARY / FAMILY" box, Occupation (Profession) list (printed page 71,
+-- file page-0067.jpg) - the same box batch 2 drew "By Birth"/"By Marriage" from. This list was
+-- already used as the distractor pool for the Grammar batch 1 occupation riddles, but the words
+-- themselves were never inserted as their own vocab rows until now - gap caught during review.
+-- "freelance translator" is skipped here since "a freelance translator" is already in batch 2.
+
+insert into matkovska_quiz_bot.vocab_words
+  (topic_id, topic_title, word, translation, example, transcription, level, source, active)
+values
+  ('family', 'Family', 'architect', 'архітектор', 'She trained for six years to become an architect.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'artist', 'художник/художниця', 'The artist spent all afternoon painting the harbour.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'actress', 'акторка', 'The actress rehearsed her lines for the new play.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'actor', 'актор', 'He became a well-known actor after his first film.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'bank manager', 'керівник банку', 'The bank manager approved the loan after reviewing the documents.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'banker', 'банкір', 'Her father works as a banker in the city centre.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'beautician', 'косметолог', 'The beautician recommended a new skincare routine.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'builder', 'будівельник', 'The builder finished the extension in just three weeks.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'composer', 'композитор', 'The composer wrote the music for the film.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'chemist', 'хімік / фармацевт', 'The chemist mixed the solution carefully in the lab.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'computer programmer', 'програміст', 'He works as a computer programmer for a software company.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'circus clown', 'цирковий клоун', 'The circus clown made all the children laugh.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'doctor', 'лікар', 'The doctor examined the patient and prescribed some medicine.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'dentist', 'стоматолог', 'I have an appointment with the dentist tomorrow morning.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'driver', 'водій', 'The driver stopped at every red light along the way.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'engineer', 'інженер', 'The engineer designed the new bridge across the river.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'journalist', 'журналіст', 'The journalist interviewed several witnesses for her article.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'lawyer', 'юрист, адвокат', 'She hired a lawyer to help with the contract.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'librarian', 'бібліотекар', 'The librarian helped me find the book I needed.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'musician', 'музикант', 'The musician practised the piano for hours every day.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'mechanic', 'механік', 'The mechanic fixed the car in under an hour.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'officer', 'офіцер', 'The officer gave clear orders to the new recruits.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'pilot', 'пілот', 'The pilot announced that the flight would land early.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'police officer', 'поліцейський', 'The police officer directed traffic after the accident.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'physicist', 'фізик', 'The physicist explained the experiment to her students.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'painter', 'художник (маляр)', 'The painter finished the portrait in just two sittings.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'plumber', 'сантехнік', 'We called a plumber to fix the leaking pipe.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'shop assistant', 'продавець-консультант', 'The shop assistant helped me find the right size.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'sportsman', 'спортсмен', 'The sportsman trained every day before the competition.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'surgeon', 'хірург', 'The surgeon operated on the patient for three hours.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'soldier', 'солдат', 'The soldier returned home after a year abroad.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'sailor', 'моряк', 'The sailor had spent most of his life at sea.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'scientific worker', 'науковий співробітник', 'She works as a scientific worker at the research institute.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'secretary', 'секретар', 'The secretary organised all the meetings for the department.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'taxi driver', 'водій таксі', 'The taxi driver knew a faster way to the airport.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'teacher', 'вчитель', 'The teacher explained the new grammar rule twice.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'typist', 'друкарка, машиністка', 'The typist finished the report ahead of schedule.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'waitress', 'офіціантка', 'The waitress recommended the soup of the day.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'waiter', 'офіціант', 'The waiter brought the menu as soon as we sat down.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'worker', 'робітник', 'Every worker at the factory got a bonus this year.', null, 'B2', 'book-import', true),
+  ('family', 'Family', 'writer', 'письменник', 'The writer published her third novel this spring.', null, 'B2', 'book-import', true);
+
 -- Batch 3: "Man's Appearance and Character" + more idiom phrases (book pages 72-73,
 -- book-source/..._page-0068.jpg and _page-0069.jpg). Adjectives for appearance, hair, eyes,
 -- nose, and character/mood, plus hair-style phrases and family-structure idioms
