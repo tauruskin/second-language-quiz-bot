@@ -17,23 +17,35 @@ human to hand-paste SQL themselves.
 ## Where the source pages live
 
 Scanned page images live in `book-source/` at the repo root — gitignored, local-only, never
-committed (this is a scanned copyrighted textbook and the repo is public). Files are named after
-the book's own printed page number, zero-padded: `page-0007.png` is the physical page with "7"
-printed at the bottom. The folder fills in incrementally — don't assume every page exists; check
-what's actually there with a directory listing before processing a unit, rather than assuming a
-contiguous range.
+committed (this is a scanned copyrighted textbook and the repo is public). Files are grouped into
+one subfolder per unit/section (e.g. `book-source/unit-01-family/`,
+`book-source/introductory-course/`, `book-source/writing-section/`) — this replaced an earlier
+flat layout once it became clear a single 300+ page folder made it too easy to lose track of which
+pages belonged to which unit. When new pages come in for a unit that doesn't have a folder yet,
+create one using the same `unit-NN-<topic-slug>` pattern (zero-padded unit number so folders sort
+correctly) or a descriptive slug for non-Main-Course sections.
 
-When asked to process a unit or topic, find its page range in `book-source/` (ask the user for the
-range if it's not obvious from context — units don't have a fixed page-count pattern, they vary a
-lot in this book) and read those files with the Read tool directly. If pages the user wants aren't
+Within each folder, files are named by scan/photo sequence, zero-padded — **not** reliably by the
+book's own printed page number; see the offset note below. The folder fills in incrementally —
+don't assume every page of a unit exists yet; check what's actually there with a directory listing
+before processing a unit, rather than assuming a contiguous range.
+
+When asked to process a unit or topic, find (or ask the human to confirm) which subfolder it's in,
+list what's there, and read those files with the Read tool directly. If pages the user wants aren't
 in the folder yet, say so rather than working from a partial unit.
 
-**The filename's page number can drift from the number actually printed on the page.** Confirmed
-in practice: early in the book, `page-0007.jpg` printed "7" — exact match — but later,
-`page-0075.jpg` printed "79" and `page-0085.jpg` printed "89", a +4 drift that appeared somewhere
-in between (likely an inserted unnumbered page during scanning). Always read the number actually
-printed at the bottom of the page for anything you cite back to the user or write into a comment —
-don't trust the filename's number once you're more than a few dozen pages into the book.
+**The filename's page number is not the number printed on the page — there's a consistent offset,
+not a drift.** For the first big scanned range (files `0003`-`0085`), printed page = file number +
+4 throughout (confirmed at six points spread across the whole range, including both ends) — most
+likely because the scan starts a few pages after the book's actual page 1, skipping unnumbered
+front matter (cover, title page, etc.), so the file sequence sits consistently behind the printed
+numbers. An earlier version of this note wrongly described this as a "drift appearing partway
+through the range" based on a misread page — it isn't a drift, it's a fixed offset from the start
+of that range. **Always read the number actually printed at the bottom of the page** for anything
+you cite back to the user or write into a comment — don't compute it from the filename, and don't
+assume the +4 offset found in this range holds for other scanned ranges (each batch of pages may
+have been scanned separately, with its own offset or none at all) without checking a page or two
+directly.
 
 ## Before extracting anything: map the whole unit
 
