@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 node_modules/
+
+# Scanned pages of Matkovska's copyrighted course book - local-only, never committed.
+# Repo is public; see skills/book-quiz-import/SKILL.md for how this folder is used.
+book-source/
